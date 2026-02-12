@@ -19,3 +19,13 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
