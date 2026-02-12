@@ -1,0 +1,17 @@
+python app/initial_data.py
+uvicorn app.main:app --reload
+pip install -r "requirements.txt"
+
+
+# 1. Make sure the database exists in Postgres
+# (Run this in a separate terminal or use pgAdmin)
+# psql -U postgres -c "CREATE DATABASE water_depot;"
+
+# 2. Run Migrations (This creates the tables in your local DB)
+alembic upgrade head
+
+# 3. Create the Admin User
+python app/initial_data.py
+
+# 4. Start the Server
+uvicorn app.main:app --reload

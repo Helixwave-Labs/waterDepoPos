@@ -1,0 +1,35 @@
+water_depot_pos/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # Entry point: initializes FastAPI
+│   ├── core/
+│   │   ├── config.py        # Environment variables (DB_URL, JWT_SECRET)
+│   │   └── security.py      # JWT logic and password hashing
+│   ├── api/                 # API Route Controllers
+│   │   ├── v1/
+│   │   │   ├── endpoints/
+│   │   │   │   ├── products.py
+│   │   │   │   ├── transactions.py
+│   │   │   │   └── users.py
+│   │   │   └── api_router.py
+│   ├── db/                  # Database connection and session
+│   │   ├── base.py          # SQLAlchemy Base for Alembic
+│   │   └── session.py       # Engine & SessionLocal
+│   ├── models/              # SQLAlchemy Tables (The "Truth")
+│   │   ├── product.py
+│   │   ├── transaction.py
+│   │   └── user.py
+│   ├── schemas/             # Pydantic Models (Data Validation/DTOs)
+│   │   ├── product.py
+│   │   ├── transaction.py
+│   │   └── token.py
+│   ├── services/            # Business Logic (The "Brain")
+│   │   ├── inventory_service.py
+│   │   └── sale_service.py
+│   └── tests/               # Pytest suite
+├── alembic/                 # Database migrations
+├── .env                     # Secrets (Not committed to Git)
+├── alembic.ini
+├── docker-compose.yml       # Spin up Postgres & App
+├── Dockerfile
+└── requirements.txt
