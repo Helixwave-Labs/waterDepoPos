@@ -12,4 +12,4 @@ COPY . .
 
 # Run migrations, create initial data, then start the server
 # We use ${PORT:-8000} to let Render set the port dynamically
-CMD sh -c "alembic upgrade head && python app/initial_data.py && python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+CMD sh -c "alembic upgrade head && python -m app.initial_data && python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
