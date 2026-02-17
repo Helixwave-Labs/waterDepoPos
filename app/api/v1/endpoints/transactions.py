@@ -30,9 +30,9 @@ def get_stats(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user)
 ) -> Any:
-    if current_user.role != "owner":
+    # Compare value, not SQLAlchemy column object
+    if getattr(current_user, "role", None) != "owner":
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
     total_sales = db.query(func.sum(Transaction.total_amount)).scalar() or 0.0
     count = db.query(Transaction).count()
     return {"total_revenue": total_sales, "transaction_count": count}

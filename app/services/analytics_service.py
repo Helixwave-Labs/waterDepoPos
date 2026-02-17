@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from app.models.transaction import Transaction, TransactionItem, SaleType
 from app.models.product import Product
 from app.models.user import User
@@ -21,7 +21,7 @@ from app.schemas.analytics import (
 
 class AnalyticsService:
     @staticmethod
-    def get_sales_metrics(db: Session, start_date: datetime = None, end_date: datetime = None) -> SalesMetrics:
+    def get_sales_metrics(db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> SalesMetrics:
         """Get overall sales metrics for a period"""
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
@@ -76,7 +76,7 @@ class AnalyticsService:
         ]
 
     @staticmethod
-    def get_product_sales(db: Session, start_date: datetime = None, end_date: datetime = None) -> ProductSalesResponse:
+    def get_product_sales(db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> ProductSalesResponse:
         """Get product sales analytics"""
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
@@ -124,7 +124,7 @@ class AnalyticsService:
         )
 
     @staticmethod
-    def get_employee_sales(db: Session, start_date: datetime = None, end_date: datetime = None) -> EmployeeSalesResponse:
+    def get_employee_sales(db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> EmployeeSalesResponse:
         """Get sales metrics by employee"""
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
@@ -184,13 +184,13 @@ class AnalyticsService:
 
         inventory_items = [
             InventoryStatus(
-                product_id=p.id,
-                product_name=p.name,
-                current_stock=p.stock_quantity,
-                low_stock_threshold=p.low_stock_threshold,
-                is_low_stock=p.stock_quantity <= p.low_stock_threshold,
-                wholesale_price=p.wholesale_price,
-                retail_price=p.retail_price,
+                product_id=getattr(p, "id", 0),
+                product_name=getattr(p, "name", ""),
+                current_stock=getattr(p, "stock_quantity", 0),
+                low_stock_threshold=getattr(p, "low_stock_threshold", 0),
+                is_low_stock=(getattr(p, "stock_quantity", 0) <= getattr(p, "low_stock_threshold", 0)),
+                wholesale_price=getattr(p, "wholesale_price", 0.0),
+                retail_price=getattr(p, "retail_price", 0.0),
             )
             for p in products
         ]
@@ -206,21 +206,20 @@ class AnalyticsService:
         )
 
     @staticmethod
-    def get_dashboard_analytics(db: Session, start_date: datetime = None, end_date: datetime = None) -> DashboardAnalytics:
+    def get_dashboard_analytics(db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> DashboardAnalytics:
         """Get comprehensive dashboard analytics"""
         if not start_date:
             start_date = datetime.utcnow() - timedelta(days=30)
         if not end_date:
             end_date = datetime.utcnow()
 
-        # Get sales metrics
         query = db.query(Transaction).filter(
             Transaction.created_at >= start_date,
             Transaction.created_at <= end_date
         )
 
-        total_revenue = query.with_entities(func.sum(Transaction.total_amount)).scalar() or 0.0
         total_transactions = query.count()
+        total_revenue = query.with_entities(func.sum(Transaction.total_amount)).scalar() or 0.0
         avg_transaction = float(total_revenue) / total_transactions if total_transactions > 0 else 0.0
 
         wholesale_revenue = query.filter(
@@ -231,16 +230,18 @@ class AnalyticsService:
             Transaction.sale_type == SaleType.RETAIL
         ).with_entities(func.sum(Transaction.total_amount)).scalar() or 0.0
 
-        total_revenue = float(wholesale_revenue) + float(retail_revenue)
-        wholesale_pct = (float(wholesale_revenue) / total_revenue * 100) if total_revenue > 0 else 0.0
-        retail_pct = (float(retail_revenue) / total_revenue * 100) if total_revenue > 0 else 0.0
+        if total_revenue > 0:
+            wholesale_pct = (float(wholesale_revenue) / float(total_revenue)) * 100
+            retail_pct = (float(retail_revenue) / float(total_revenue)) * 100
+        else:
+            wholesale_pct = 0.0
+            retail_pct = 0.0
 
-        # Get top products
         top_products_data = db.query(
             Product.id,
             Product.name,
             func.sum(TransactionItem.quantity).label('quantity_sold'),
-            func.sum(TransactionItem.quantity * TransactionItem.price_at_sale).label('revenue'),
+            func.sum(TransactionItem.quantity * TransactionItem.price_at_sale).label('revenue')
         ).join(
             TransactionItem, Product.id == TransactionItem.product_id
         ).join(
@@ -272,13 +273,13 @@ class AnalyticsService:
 
         low_stock_list = [
             InventoryStatus(
-                product_id=p.id,
-                product_name=p.name,
-                current_stock=p.stock_quantity,
-                low_stock_threshold=p.low_stock_threshold,
+                product_id=getattr(p, "id", 0),
+                product_name=getattr(p, "name", ""),
+                current_stock=getattr(p, "stock_quantity", 0),
+                low_stock_threshold=getattr(p, "low_stock_threshold", 0),
                 is_low_stock=True,
-                wholesale_price=p.wholesale_price,
-                retail_price=p.retail_price,
+                wholesale_price=getattr(p, "wholesale_price", 0.0),
+                retail_price=getattr(p, "retail_price", 0.0),
             )
             for p in low_stock_products
         ]

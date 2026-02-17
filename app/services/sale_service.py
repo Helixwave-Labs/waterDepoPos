@@ -1,11 +1,10 @@
+from typing import List
 from sqlalchemy.orm import Session
-from sqlalchemy import select
-from fastapi import HTTPException, status
-from app.models.product import Product
+from fastapi import HTTPException
 from app.models.transaction import Transaction, TransactionItem, SaleType
+from app.models.product import Product
 from app.models.user import User
 from app.schemas.transaction import TransactionItemCreate
-from typing import List
 
 class SaleService:
     @staticmethod
@@ -18,38 +17,48 @@ class SaleService:
         total_amount = 0.0
         db_items = []
 
-        # We do not commit here immediately. We let the caller or the end of the request handle commit,
-        # BUT for locking to work effectively in a transaction block, we usually need an active transaction.
-        # FastAPI's dependency injection usually starts a transaction.
-        
-        for item in items:
-            # LOCK the row for update to prevent race conditions
-            stmt = select(Product).where(Product.id == item.product_id).with_for_update()
-            product = db.execute(stmt).scalar_one_or_none()
-
+        # Iterate through items to calculate total and deduct stock
+        for item_data in items:
+            # Lock the product row to prevent race conditions
+            product = db.query(Product).filter(Product.id == item_data.product_id).with_for_update().first()
+            
             if not product:
-                raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+                raise HTTPException(status_code=404, detail=f"Product {item_data.product_id} not found")
             
-            if product.stock_quantity < item.quantity:
-                raise HTTPException(status_code=400, detail=f"Insufficient stock for product: {product.name}")
-
-            # Determine Price
-            price = product.wholesale_price if sale_type == SaleType.WHOLESALE else product.retail_price
+            if product.stock_quantity < item_data.quantity:
+                raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name}. Available: {product.stock_quantity}")
             
-            # Deduct Stock
-            product.stock_quantity -= item.quantity
+            # Determine price based on the item's sale type (Single vs Pack)
+            if item_data.sale_type == SaleType.WHOLESALE:
+                price = product.wholesale_price
+            else:
+                price = product.retail_price
             
-            # Create Item Snapshot
+            item_total = price * item_data.quantity
+            total_amount += item_total
+            
+            # Deduct stock
+            product.stock_quantity -= item_data.quantity
+            
+            # Create transaction item record
             db_item = TransactionItem(
                 product_id=product.id,
-                quantity=item.quantity,
-                price_at_sale=price
+                quantity=item_data.quantity,
+                price_at_sale=price,
+                sale_type=item_data.sale_type
             )
             db_items.append(db_item)
-            total_amount += (price * item.quantity)
-
-        transaction = Transaction(user_id=user.id, total_amount=total_amount, sale_type=sale_type, items=db_items)
+            
+        # Create the main transaction record
+        transaction = Transaction(
+            user_id=user.id,
+            total_amount=total_amount,
+            sale_type=sale_type,
+            items=db_items
+        )
+        
         db.add(transaction)
         db.commit()
         db.refresh(transaction)
+        
         return transaction

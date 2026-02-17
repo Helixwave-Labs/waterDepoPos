@@ -16,7 +16,7 @@ class DailySalesMetrics(BaseModel):
     transaction_count: int
 
 class ProductSales(BaseModel):
-    product_id: int
+    product_id: str
     product_name: str
     quantity_sold: int
     total_revenue: float
@@ -30,7 +30,7 @@ class ProductSalesResponse(BaseModel):
 
 # Employee Analytics
 class EmployeeSalesMetrics(BaseModel):
-    user_id: int
+    user_id: str
     username: str
     total_sales: float
     transaction_count: int
@@ -44,7 +44,7 @@ class EmployeeSalesResponse(BaseModel):
 
 # Inventory Analytics
 class InventoryStatus(BaseModel):
-    product_id: int
+    product_id: str
     product_name: str
     current_stock: int
     low_stock_threshold: int
@@ -67,7 +67,7 @@ class RevenueBreakdown(BaseModel):
     retail_percentage: float
 
 class TopProduct(BaseModel):
-    product_id: int
+    product_id: str
     product_name: str
     quantity_sold: int
     revenue: float

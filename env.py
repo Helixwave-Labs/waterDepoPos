@@ -63,7 +63,13 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        # Set a lock timeout of 10 seconds (10000ms) to prevent hanging indefinitely
+        # Set idle_in_transaction_session_timeout to 60s to kill stuck connections automatically
+        connect_args={"options": "-c lock_timeout=10000 -c idle_in_transaction_session_timeout=60000"},
     )
+    
+    # Log the database host to verify we are connecting to the correct instance (Aiven vs Local)
+    print(f"Alembic connecting to host: {connectable.url.host}")
 
     with connectable.connect() as connection:
         context.configure(

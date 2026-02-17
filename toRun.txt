@@ -15,3 +15,15 @@ python app/initial_data.py
 
 # 4. Start the Server
 uvicorn app.main:app --reload
+
+
+Update your Start Command in the Render Dashboard (Settings > Start Command) to chain these three steps:
+
+Run Migrations (Schema)
+Run Data Script (Rows)
+Start App
+
+alembic revision --autogenerate -m "Add sku category and mixed sales"
+alembic upgrade head
+
+
