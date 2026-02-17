@@ -1,4 +1,5 @@
 
+import os
 import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +19,7 @@ logger = logging.getLogger("water_depot_pos")
 
 
 app = FastAPI(title="Water Depot POS")
+os.makedirs("app/static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
