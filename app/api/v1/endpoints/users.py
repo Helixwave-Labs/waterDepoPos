@@ -58,7 +58,7 @@ def create_user(
     db.refresh(user)
     return user
 
-@router.get("/staff", response_model=List[UserResponse])
+@router.get("/", response_model=List[UserResponse])
 def list_staff(
     db: Session = Depends(deps.get_db),
     current_user: User = Depends(deps.get_current_user),
@@ -69,7 +69,7 @@ def list_staff(
     staff = db.query(User).filter(User.role == UserRole.STAFF).all()
     return staff
 
-@router.delete("/staff/{user_id}", response_model=UserResponse)
+@router.delete("/{user_id}", response_model=UserResponse)
 def delete_staff(
     *,
     db: Session = Depends(deps.get_db),
