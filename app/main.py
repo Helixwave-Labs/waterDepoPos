@@ -49,7 +49,7 @@ async def startup_event():
 
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     logger.info("Root endpoint accessed.")
     return {"message": "Welcome to Water Depot POS API"}
