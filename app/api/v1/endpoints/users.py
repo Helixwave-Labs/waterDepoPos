@@ -8,7 +8,7 @@ from app.api.v1 import deps
 from app.core import security
 from app.core.config import settings
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.schemas.token import Token
 
 router = APIRouter()
@@ -26,6 +26,53 @@ def login_access_token(
         user.username, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserResponse)
+def read_user_me(
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Get current user.
+    """
+    return UserResponse(
+        id=str(current_user.id),
+        username=current_user.username,
+        full_name=current_user.full_name,
+        phone=current_user.phone,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at
+    )
+
+@router.put("/me", response_model=UserResponse)
+def update_user_me(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: UserUpdate,
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Update own user.
+    """
+    if user_in.full_name is not None:
+        current_user.full_name = user_in.full_name
+    if user_in.phone is not None:
+        current_user.phone = user_in.phone
+    if user_in.password is not None:
+        current_user.hashed_password = security.get_password_hash(user_in.password)
+    
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return UserResponse(
+        id=str(current_user.id),
+        username=current_user.username,
+        full_name=current_user.full_name,
+        phone=current_user.phone,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at
+    )
 
 @router.post("/", response_model=UserResponse)
 def create_user(
@@ -92,6 +139,47 @@ def list_staff(
         ) for user in staff
     ]
 
+@router.put("/{user_id}", response_model=UserResponse)
+def update_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_id: str,
+    user_in: UserUpdate,
+    current_user: User = Depends(deps.get_current_user),
+) -> Any:
+    """
+    Update a user (Owner only).
+    """
+    if (getattr(current_user, "role", None) != UserRole.OWNER and getattr(current_user, "role", None) != "owner"):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    if str(current_user.id) == user_id:
+        raise HTTPException(status_code=400, detail="Cannot update own account via this endpoint")
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user_in.full_name is not None:
+        user.full_name = user_in.full_name
+    if user_in.phone is not None:
+        user.phone = user_in.phone
+    if user_in.password is not None:
+        user.hashed_password = security.get_password_hash(user_in.password)
+    
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        full_name=user.full_name,
+        phone=user.phone,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at
+    )
+
 @router.delete("/{user_id}", response_model=UserResponse)
 def delete_staff(
     *,
@@ -130,6 +218,9 @@ def toggle_user_status(
     """
     if (getattr(current_user, "role", None) != UserRole.OWNER and getattr(current_user, "role", None) != "owner"):
         raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    if str(current_user.id) == user_id:
+        raise HTTPException(status_code=400, detail="Cannot change own status")
     
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
