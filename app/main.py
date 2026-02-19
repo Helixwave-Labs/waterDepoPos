@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api_router import api_router
+from app.services.storage_service import StorageService
 
 # Production-ready logging setup
 logging.basicConfig(
@@ -46,6 +47,13 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application started successfully. Waiting for requests...")
+    
+    # Check storage connection
+    try:
+        storage = StorageService()
+        storage.check_connection()
+    except Exception as e:
+        logger.error(f"Failed to initialize storage service check: {e}")
 
 
 

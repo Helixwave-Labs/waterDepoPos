@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic_settings import BaseSettings
-from pydantic import PostgresDsn, computed_field
+from pydantic import computed_field
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
@@ -29,13 +29,7 @@ class Settings(BaseSettings):
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         if self.DATABASE_URL:
             return self.DATABASE_URL.replace("postgres://", "postgresql://")
-        return str(PostgresDsn.build(
-            scheme="postgresql",
-            username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD,
-            host=self.POSTGRES_SERVER,
-            path=self.POSTGRES_DB,
-        ))
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
 
     class Config:
         case_sensitive = True

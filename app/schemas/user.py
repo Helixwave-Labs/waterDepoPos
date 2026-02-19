@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.models.user import UserRole
 
 class UserBase(BaseModel):
@@ -20,7 +20,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(UserBase):
     id: str
-    created_at: Optional[datetime] = None
+    created_at: Optional[datetime] = Field(default=None)
 
     class Config:
         from_attributes = True

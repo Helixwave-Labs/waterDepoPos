@@ -15,6 +15,11 @@ class StorageService:
         self.bucket_name = settings.S3_BUCKET_NAME
         self.public_domain = settings.S3_PUBLIC_DOMAIN or settings.R2_PUBLIC_DOMAIN
 
+        # Fix common configuration error where bucket name is included in endpoint URL
+        if self.endpoint_url and self.bucket_name and self.endpoint_url.endswith(f"/{self.bucket_name}"):
+            self.endpoint_url = self.endpoint_url.replace(f"/{self.bucket_name}", "")
+            logger.warning(f"Detected bucket name in S3_ENDPOINT_URL. Adjusted to: {self.endpoint_url}")
+
         if not self.endpoint_url or not self.access_key or not self.secret_key:
             logger.warning("S3/R2 storage configuration is missing. Image uploads will fail.")
 
@@ -71,3 +76,27 @@ class StorageService:
         except ClientError as e:
             logger.error(f"Failed to delete image from S3/R2: {e}")
             # We log the error but do not raise it, so the product deletion can proceed
+
+    def check_connection(self):
+        """
+        Verifies connection to the storage bucket.
+        """
+        if not self.endpoint_url or not self.access_key or not self.secret_key:
+            logger.warning("Storage credentials not fully configured. Skipping connection check.")
+            return
+
+        try:
+            # head_bucket checks if bucket exists and we have permission
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+            logger.info(f"✅ Storage connection successful. Bucket '{self.bucket_name}' is accessible.")
+            
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code")
+            if error_code == "403":
+                logger.error(f"❌ Storage connection failed: Access Denied to bucket '{self.bucket_name}'. Check credentials.")
+            elif error_code == "404":
+                logger.error(f"❌ Storage connection failed: Bucket '{self.bucket_name}' does not exist.")
+            else:
+                logger.error(f"❌ Storage connection failed: {e}")
+        except Exception as e:
+            logger.error(f"❌ Storage connection failed with unexpected error: {e}")
