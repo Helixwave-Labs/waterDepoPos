@@ -104,7 +104,7 @@ class AnalyticsService:
 
         sales = [
             ProductSales(
-                product_id=stat.id,
+                product_id=str(stat.id),
                 product_name=stat.name,
                 quantity_sold=stat.quantity_sold or 0,
                 total_revenue=float(stat.total_revenue or 0),
@@ -161,7 +161,7 @@ class AnalyticsService:
 
         employees = [
             EmployeeSalesMetrics(
-                user_id=stat.id,
+                user_id=str(stat.id),
                 username=stat.username,
                 total_sales=float(stat.total_sales or 0),
                 transaction_count=stat.transaction_count or 0,
@@ -184,7 +184,7 @@ class AnalyticsService:
 
         inventory_items = [
             InventoryStatus(
-                product_id=getattr(p, "id", 0),
+                product_id=str(p.id),
                 product_name=getattr(p, "name", ""),
                 current_stock=getattr(p, "stock_quantity", 0),
                 low_stock_threshold=getattr(p, "low_stock_threshold", 0),
@@ -257,7 +257,7 @@ class AnalyticsService:
 
         top_products = [
             TopProduct(
-                product_id=p.id,
+                product_id=str(p.id),
                 product_name=p.name,
                 quantity_sold=p.quantity_sold or 0,
                 revenue=float(p.revenue or 0),
@@ -273,7 +273,7 @@ class AnalyticsService:
 
         low_stock_list = [
             InventoryStatus(
-                product_id=getattr(p, "id", 0),
+                product_id=str(p.id),
                 product_name=getattr(p, "name", ""),
                 current_stock=getattr(p, "stock_quantity", 0),
                 low_stock_threshold=getattr(p, "low_stock_threshold", 0),

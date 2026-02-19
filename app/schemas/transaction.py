@@ -24,3 +24,8 @@ class TransactionResponse(BaseModel):
     sale_type: SaleType
     created_at: datetime
     items: List[TransactionItemResponse]
+
+class TopProduct(BaseModel):
+    product_id: str
+    name: str
+    quantity: int

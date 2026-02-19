@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.api.v1 import deps
 from app.models.user import User
-from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionItemResponse
+from app.models.transaction import Transaction, TransactionItem
+from app.models.product import Product
+from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionItemResponse, TopProduct
 from app.services.sale_service import SaleService
 
 router = APIRouter()
@@ -50,4 +51,18 @@ def get_stats(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     total_sales = db.query(func.sum(Transaction.total_amount)).scalar() or 0.0
     count = db.query(Transaction).count()
-    return {"total_revenue": total_sales, "transaction_count": count}
+    
+    # Get top selling products
+    top_products_query = db.query(
+        TransactionItem.product_id,
+        Product.name,
+        func.sum(TransactionItem.quantity).label("total_quantity")
+    ).join(Product, TransactionItem.product_id == Product.id)\
+     .group_by(TransactionItem.product_id, Product.name)\
+     .order_by(func.sum(TransactionItem.quantity).desc())\
+     .limit(5).all()
+
+    # Convert UUID to string explicitly to avoid Pydantic validation error
+    top_products = [TopProduct(product_id=str(row.product_id), name=row.name, quantity=row.total_quantity) for row in top_products_query]
+
+    return {"total_revenue": total_sales, "transaction_count": count, "top_products": top_products}
