@@ -17,4 +17,4 @@ class Product(Base):
     sku = Column(String, unique=True, index=True, nullable=True)
     category = Column(String, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    image = Column(String, nullable=True)  # Path or URL to image file
+    image_url = Column(String, nullable=True)  # Path or URL to image file

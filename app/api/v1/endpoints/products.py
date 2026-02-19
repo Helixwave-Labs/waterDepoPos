@@ -38,12 +38,12 @@ def read_products(
         stock_quantity=p.stock_quantity,
         low_stock_threshold=p.low_stock_threshold,
         is_active=p.is_active,
-        image_url=p.image,
+        image_url=p.image_url,
         created_at=p.created_at
     ) for p in products]
 
 @router.post("/", response_model=ProductResponse)
-async def create_product(
+def create_product(
     db: Session = Depends(deps.get_db),
     name: str = Form(...),
     sku: Optional[str] = Form(None),
@@ -83,7 +83,7 @@ async def create_product(
         stock_quantity=stock_quantity,
         low_stock_threshold=low_stock_threshold,
         is_active=is_active,
-        image=image_url
+        image_url=image_url
     )
     db.add(product)
     db.commit()
@@ -98,7 +98,7 @@ async def create_product(
         stock_quantity=product.stock_quantity,
         low_stock_threshold=product.low_stock_threshold,
         is_active=product.is_active,
-        image_url=product.image,
+        image_url=product.image_url,
         created_at=product.created_at
     )
 
@@ -115,9 +115,9 @@ def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    if product.image:
+    if product.image_url:
         storage_service = StorageService()
-        storage_service.delete_image(product.image)
+        storage_service.delete_image(product.image_url)
 
     db.delete(product)
     db.commit()
@@ -131,6 +131,6 @@ def delete_product(
         stock_quantity=product.stock_quantity,
         low_stock_threshold=product.low_stock_threshold,
         is_active=product.is_active,
-        image_url=product.image,
+        image_url=product.image_url,
         created_at=product.created_at
     )
