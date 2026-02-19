@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, List
+from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -32,10 +32,10 @@ def create_user(
     *,
     db: Session = Depends(deps.get_db),
     username: str = Form(..., description="Username"),
-    full_name: str = Form(None, description="Full Name"),
+    full_name: Optional[str] = Form(None, description="Full Name"),
     password: str = Form(..., description="Password"),
     role: UserRole = Form(UserRole.STAFF, description="Role: owner or staff"),
-    phone: str = Form(None, description="Phone number"),
+    phone: Optional[str] = Form(None, description="Phone number"),
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
     # Compare the value, not the SQLAlchemy column object
@@ -45,6 +45,11 @@ def create_user(
     # Check if user exists
     if db.query(User).filter(User.username == username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
+
+    if full_name == "":
+        full_name = None
+    if phone == "":
+        phone = None
 
     user = User(
         username=username,
@@ -56,7 +61,15 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        full_name=user.full_name,
+        phone=user.phone,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at
+    )
 
 @router.get("/", response_model=List[UserResponse])
 def list_staff(
@@ -67,7 +80,17 @@ def list_staff(
     if (getattr(current_user, "role", None) != UserRole.OWNER and getattr(current_user, "role", None) != "owner"):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     staff = db.query(User).filter(User.role == UserRole.STAFF).all()
-    return staff
+    return [
+        UserResponse(
+            id=str(user.id),
+            username=user.username,
+            full_name=user.full_name,
+            phone=user.phone,
+            role=user.role,
+            is_active=user.is_active,
+            created_at=user.created_at
+        ) for user in staff
+    ]
 
 @router.delete("/{user_id}", response_model=UserResponse)
 def delete_staff(
@@ -115,4 +138,12 @@ def toggle_user_status(
     user.is_active = active
     db.commit()
     db.refresh(user)
-    return user
+    return UserResponse(
+        id=str(user.id),
+        username=user.username,
+        full_name=user.full_name,
+        phone=user.phone,
+        role=user.role,
+        is_active=user.is_active,
+        created_at=user.created_at
+    )

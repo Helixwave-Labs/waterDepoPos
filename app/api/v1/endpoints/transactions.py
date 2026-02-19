@@ -5,7 +5,7 @@ from sqlalchemy import func
 from app.api.v1 import deps
 from app.models.user import User
 from app.models.transaction import Transaction
-from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.schemas.transaction import TransactionCreate, TransactionResponse, TransactionItemResponse
 from app.services.sale_service import SaleService
 
 router = APIRouter()
@@ -18,11 +18,26 @@ def create_transaction(
     current_user: User = Depends(deps.get_current_user)
 ) -> Any:
     # Both staff and owner can create transactions
-    return SaleService.process_sale(
+    transaction = SaleService.process_sale(
         db=db,
         user=current_user,
         items=transaction_in.items,
         sale_type=transaction_in.sale_type
+    )
+    
+    return TransactionResponse(
+        id=str(transaction.id),
+        total_amount=transaction.total_amount,
+        sale_type=transaction.sale_type,
+        created_at=transaction.created_at,
+        items=[
+            TransactionItemResponse(
+                product_id=str(item.product_id),
+                quantity=item.quantity,
+                price_at_sale=item.price_at_sale,
+                sale_type=item.sale_type
+            ) for item in transaction.items
+        ]
     )
 
 @router.get("/stats")

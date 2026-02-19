@@ -3,6 +3,7 @@ import os
 import logging
 from fastapi import FastAPI, Request, Response, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1.api_router import api_router
@@ -53,3 +54,11 @@ async def startup_event():
 def root():
     logger.info("Root endpoint accessed.")
     return {"message": "Welcome to Water Depot POS API"}
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal Server Error. Please check server logs."},
+    )

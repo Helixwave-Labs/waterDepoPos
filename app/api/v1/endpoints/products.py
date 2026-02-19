@@ -69,6 +69,11 @@ async def create_product(
         storage_service = StorageService()
         image_url = storage_service.upload_image(image, filename)
 
+    if sku == "":
+        sku = None
+    if category == "":
+        category = None
+
     product = Product(
         name=name,
         sku=sku,
