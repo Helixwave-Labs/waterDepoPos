@@ -38,7 +38,7 @@ def read_products(
         stock_quantity=p.stock_quantity,
         low_stock_threshold=p.low_stock_threshold,
         is_active=p.is_active,
-        image_url=p.image_url,
+        image_url=p.image,
         created_at=p.created_at
     ) for p in products]
 
@@ -83,7 +83,7 @@ async def create_product(
         stock_quantity=stock_quantity,
         low_stock_threshold=low_stock_threshold,
         is_active=is_active,
-        image_url=image_url
+        image=image_url
     )
     db.add(product)
     db.commit()
@@ -98,7 +98,7 @@ async def create_product(
         stock_quantity=product.stock_quantity,
         low_stock_threshold=product.low_stock_threshold,
         is_active=product.is_active,
-        image_url=product.image_url,
+        image_url=product.image,
         created_at=product.created_at
     )
 
@@ -115,9 +115,9 @@ def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    if product.image_url:
+    if product.image:
         storage_service = StorageService()
-        storage_service.delete_image(product.image_url)
+        storage_service.delete_image(product.image)
 
     db.delete(product)
     db.commit()
@@ -131,6 +131,6 @@ def delete_product(
         stock_quantity=product.stock_quantity,
         low_stock_threshold=product.low_stock_threshold,
         is_active=product.is_active,
-        image_url=product.image_url,
+        image_url=product.image,
         created_at=product.created_at
     )
