@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, 
 import os
 from uuid import uuid4
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.api.v1 import deps
 from app.models.user import User
 from app.models.product import Product
@@ -86,8 +87,14 @@ def create_product(
         image_url=image_url
     )
     db.add(product)
-    db.commit()
-    db.refresh(product)
+    try:
+        db.commit()
+        db.refresh(product)
+    except IntegrityError as e:
+        db.rollback()
+        if "ix_products_sku" in str(e.orig):
+            raise HTTPException(status_code=400, detail="Product with this SKU already exists")
+        raise HTTPException(status_code=400, detail=str(e))
     return ProductResponse(
         id=str(product.id),
         name=product.name,
