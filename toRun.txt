@@ -27,3 +27,10 @@ alembic revision --autogenerate -m "Add sku category and mixed sales"
 alembic upgrade head
 
 
+DATABASE_URL	Your Aiven connection string (Render might auto-generate one if you use Render Postgres, but use yours for Aiven)
+SECRET_KEY	Your secret key
+S3_ENDPOINT_URL	Your Cloudflare R2 endpoint (without the bucket name at the end)
+R2_ACCESS_KEY_ID	Your R2 Access Key ID
+R2_SECRET_ACCESS_KEY	Your R2 Secret Access Key
+R2_PUBLIC_DOMAIN	Your R2 Public Domain URL
+S3_BUCKET_NAME	waterdepoimages (Or whatever your bucket is named)

@@ -115,11 +115,10 @@ def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    if product.image_url:
-        storage_service = StorageService()
-        storage_service.delete_image(product.image_url)
-
-    db.delete(product)
+    # Soft delete: just mark as inactive so we keep transaction history
+    # We do NOT delete the image from storage so history remains valid if needed,
+    # or you can choose to delete it if you want to save space.
+    product.is_active = False
     db.commit()
     return ProductResponse(
         id=str(product.id),
