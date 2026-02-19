@@ -17,7 +17,7 @@ class Transaction(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     total_amount = Column(Float, nullable=False)
-    sale_type = Column(Enum(SaleType), nullable=False)
+    sale_type = Column(Enum(SaleType, values_callable=lambda x: [e.value for e in x]), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     items = relationship("TransactionItem", back_populates="transaction")
@@ -30,6 +30,6 @@ class TransactionItem(Base):
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     price_at_sale = Column(Float, nullable=False)
-    sale_type = Column(Enum(SaleType), nullable=False, default=SaleType.RETAIL)
+    sale_type = Column(Enum(SaleType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=SaleType.RETAIL)
 
     transaction = relationship("Transaction", back_populates="items")
